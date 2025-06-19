@@ -1,0 +1,45 @@
+# This is a config yaml file for T1 Volume Counter BIDS App
+# Arguments passed to the application inside the container
+bids_app_args:
+    $SUBJECT_SELECTION_FLAG: "--participant-label"
+    --skip-bids-validation: ""
+
+singularity_args:
+    - --userns
+    - --no-home
+    - --writable-tmpfs
+
+# Output foldername(s) to be zipped:
+zip_foldernames:
+    t1-volume-counter: "0-1-0"
+
+# How much cluster resources it needs:
+cluster_resources:
+    interpreting_shell: "/bin/bash"
+    customized_text: |
+        #SBATCH --partition=mit_preemptable
+        #SBATCH --cpus-per-task=1
+        #SBATCH --mem=8G
+        #SBATCH --time=00:05:00
+        #SBATCH --job-name=t1_volume_counter
+
+# Necessary commands to be run first:
+script_preamble: |
+    source ~/.bashrc 
+    micromamba activate babs
+    module load apptainer/1.1.9
+
+# Where to run the jobs:
+job_compute_space: "/orcd/scratch/bcs/001/yibei/t1_volume_counter_compute" # change it to your compute space
+
+required_files:
+    $INPUT_DATASET_#1:
+        - "anat/*_T1w.nii*"
+
+# Alert messages that might be found in log files of failed jobs:
+alert_log_messages:
+    stdout:
+        - "ERROR:"
+        - "Cannot allocate memory"
+        - "FileNotFoundError"
+        - "nibabel.filebasedimages.ImageFileError"

@@ -5,56 +5,71 @@ A demo for OHBM 2025 educational course on BABS
 
 This repository demonstrates how to use BIDS App Bootstrap (BABS) with a simple BIDS App that counts volumes in T1-weighted MRI images.
 
-## The BIDS App: T1 Volume Counter
+## What do we need
 
-A simple BIDS App that:
-- Finds all T1-weighted images in a BIDS dataset
-- Counts the number of volumes in each image
-- Outputs results in BIDS derivatives format
+- This repository - make a fork of this repo
+- BABS environment (including DataLad, git-annex)
+- HPC (SLURM or SGE, we will use SLURM in this demo)
+- A BIDS App
+- A BIDS dataset (we will use ABIDE-I in this demo)
 
-### Running Locally
-
-```bash
-python volume_counter_bidsapp.py <bids_dir> <output_dir> participant
-```
-
-### Docker Usage
-
-#### Building the Docker Image
+## 1. Get on HPC and Git Clone this repo
 
 ```bash
-docker build -t bidsapp/volume-counter .
+git clone https://github.com/yourgithubusername/babs-demo-ohbm2025
+cd babs-demo-ohbm2025
 ```
 
-#### Running the Containerized App
+## 2. Install BABS and dependencies
 
-For participant level analysis:
 ```bash
-docker run -it --rm \
-    -v /path/to/bids/dataset:/data:ro \
-    -v /path/to/output:/output \
-    bidsapp/volume-counter \
-    /data /output participant
+# Install into a new environment called babs:
+mamba create -f environment_hpc.yml
+
+# Activate the environment:
+mamba activate babs
 ```
 
-For specific participants:
+For more details, see the [BABS installation documentation](https://pennlinc-babs.readthedocs.io/en/stable/installation.html).
+
+## 3. Prepare input BIDS dataset(s) as DataLad dataset(s)
+
+Here we use an existing DataLad BIDS dataset on our cluster. For more details on how to prepare BIDS dataset(s) as DataLad dataset(s), see the [BABS documentation](https://pennlinc-babs.readthedocs.io/en/stable/preparation_input_dataset.html#id3).
+
+## 4. Prepare containerized BIDS App as a DataLad dataset
+
+Here we use a BIDS App that counts T1 volume. We have it on Docker Hub and also in this repo.
+
+You can build a Singularity file from Docker Hub using either Apptainer or Singularity depending on what your HPC supports.
+
+If you build it from Docker, run:
+
 ```bash
-docker run -it --rm \
-    -v /path/to/bids/dataset:/data:ro \
-    -v /path/to/output:/output \
-    bidsapp/volume-counter \
-    /data /output participant \
-    --participant-label 01 02 03
+# Load module first if needed
+module load apptainer/1.1.9
+
+# Build the image
+apptainer build \
+    t1-volume-counter-0.1.0.sif \
+    docker://yibeichen/t1-volume-counter:0.1.0
 ```
 
-For group level analysis:
+Or use the SIF from this repo directly:
+
 ```bash
-docker run -it --rm \
-    -v /path/to/bids/dataset:/data:ro \
-    -v /path/to/output:/output \
-    bidsapp/volume-counter \
-    /data /output group
+cd babs-demo-ohbm2025
+echo "Current directory: $PWD"
+
+datalad create -D "demo BIDS App" bidsapp-container
+cd bidsapp-container
+datalad containers-add \
+    --url ${PWD}/../t1-volume-counter-0.1.0.sif \
+    t1-volume-counter-0-1-0
 ```
+
+## 5. Prepare a YAML file for this t1-volume-counter app
+
+## 6. Create a BABS project
 
 ### Output Format
 
