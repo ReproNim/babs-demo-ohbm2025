@@ -1,4 +1,5 @@
-FROM python:3.9-slim
+# Use multi-platform base image and specify linux/amd64 for HPC compatibility
+FROM --platform=linux/amd64 python:3.9-slim
 
 # Install system dependencies
 RUN apt-get update && \
