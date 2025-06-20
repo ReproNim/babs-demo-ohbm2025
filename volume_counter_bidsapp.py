@@ -37,7 +37,11 @@ def create_dataset_description(output_dir, version):
         }]
     }
     
-    desc_file = output_dir / 'dataset_description.json'
+    # Create main app output directory
+    app_dir = output_dir / 't1-volume-counter'
+    app_dir.mkdir(exist_ok=True, parents=True)
+    
+    desc_file = app_dir / 'dataset_description.json'
     with open(desc_file, 'w') as f:
         json.dump(description, f, indent=4)
 
@@ -109,8 +113,10 @@ def process_dataset(bids_dir, output_dir, participant_label=None):
     
     # Filter by participant if specified
     if participant_label:
-        t1w_files = [f for f in t1w_files if f'sub-{participant_label}' in str(f)]
-        logger.info(f"Processing {len(t1w_files)} T1w images for participant {participant_label}")
+        # Remove 'sub-' prefix if it exists
+        clean_label = participant_label.replace('sub-', '')
+        t1w_files = [f for f in t1w_files if f'sub-{clean_label}' in str(f)]
+        logger.info(f"Processing {len(t1w_files)} T1w images for participant sub-{clean_label}")
     
     results = []
     
@@ -143,6 +149,10 @@ def process_dataset(bids_dir, output_dir, participant_label=None):
 
 def save_results(results, output_dir):
     """Save results in BIDS derivatives format"""
+    # Create main app output directory for 7z compatibility
+    app_dir = output_dir / 't1-volume-counter'
+    app_dir.mkdir(exist_ok=True, parents=True)
+    
     # Group results by subject
     subjects = {}
     for result in results:
@@ -154,7 +164,7 @@ def save_results(results, output_dir):
     # Save per-subject TSV files
     for sub, sub_results in subjects.items():
         # Create subject directory
-        sub_dir = output_dir / f'sub-{sub}'
+        sub_dir = app_dir / f'sub-{sub}'
         sub_dir.mkdir(exist_ok=True, parents=True)
         
         # Prepare TSV data
@@ -188,7 +198,7 @@ def save_results(results, output_dir):
             json.dump(sidecar, f, indent=4)
     
     # Save group-level summary
-    summary_file = output_dir / 'participants.tsv'
+    summary_file = app_dir / 'participants.tsv'
     with open(summary_file, 'w') as f:
         f.write('participant_id\tn_t1w_scans\ttotal_volumes\n')
         for sub, sub_results in subjects.items():
@@ -246,8 +256,10 @@ def main():
         if args.participant_label:
             # Process specific participants
             for label in args.participant_label:
-                logger.info(f"Processing participant: sub-{label}")
-                results = process_dataset(args.bids_dir, args.output_dir, label)
+                # Remove 'sub-' prefix if present in label
+                clean_label = label.replace('sub-', '')
+                logger.info(f"Processing participant: sub-{clean_label}")
+                results = process_dataset(args.bids_dir, args.output_dir, clean_label)
                 if results:
                     save_results(results, args.output_dir)
         else:
@@ -260,7 +272,8 @@ def main():
     elif args.analysis_level == "group":
         # For this simple app, group level just ensures summary exists
         logger.info("Group level analysis - ensuring summary files exist")
-        summary_file = args.output_dir / 'participants.tsv'
+        app_dir = args.output_dir / 't1-volume-counter'
+        summary_file = app_dir / 'participants.tsv'
         if not summary_file.exists():
             logger.warning("No participant-level results found. Run participant level first.")
     
