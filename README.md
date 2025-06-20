@@ -13,16 +13,21 @@ This repository demonstrates how to use BIDS App Bootstrap (BABS) with a simple 
 - A BIDS App
 - A BIDS dataset (we will use ABIDE-I in this demo)
 
-## 1. Get on HPC and Git Clone this repo
+## 1. Get on HPC and Git Clone this repo (your fork)
 
 ```bash
 git clone https://github.com/yourgithubusername/babs-demo-ohbm2025
-cd babs-demo-ohbm2025
 ```
+
+We recommend running this demo on a scratch space rather than your home directory on HPC.  
 
 ## 2. Install BABS and dependencies
 
+We recommend using `mamba` or `micromamba` for package management.
+
 ```bash
+cd babs-demo-ohbm2025
+
 # Install into a new environment called babs:
 mamba create -f environment_hpc.yml
 
@@ -42,7 +47,7 @@ Here we use a BIDS App that counts T1 volume. We have it on Docker Hub and also 
 
 You can build a Singularity file from Docker Hub using either Apptainer or Singularity depending on what your HPC supports.
 
-If you build it from Docker, run:
+If build it from Dockerhub, run:
 
 ```bash
 # Load module first if needed
@@ -57,7 +62,7 @@ apptainer build \
 Or use the SIF from this repo directly:
 
 ```bash
-cd babs-demo-ohbm2025
+cd babs-demo-ohbm2025 # make sure you're in the root folder
 echo "Current directory: $PWD"
 
 datalad create -D "demo BIDS App" bidsapp-container
@@ -87,9 +92,9 @@ input_datasets:
 cluster_resources:
     customized_text: |
         #SBATCH --partition=mit_preemptable  # Change to your partition
-        #SBATCH --cpus-per-task=1
-        #SBATCH --mem=8G
-        #SBATCH --time=00:05:00
+        #SBATCH --cpus-per-task=1            # Change it accordingly based on your BIDSApp task
+        #SBATCH --mem=4G                     # Change it accordingly based on your BIDSApp task
+        #SBATCH --time=00:05:00              # Change it accordingly based on your BIDSApp task
 ```
 - Update `--partition` to match your HPC cluster's partition names
 - Adjust memory and time limits based on your needs
@@ -217,12 +222,111 @@ The error shows:
 mkdir -p /orcd/scratch/bcs/001/yibei/t1_volume_counter_compute
 ```
 
-Then re-submit the jobs with `babs submit`.
+Then re-submit the jobs with `babs submit` in `counting_project` folder.
 
-### Output Format
+Now let's run `babs status`:
+```
+No jobs in the queue
+No jobs in the queue
+Job status:
+There are in total of 38 jobs to complete.
 
-The app creates BIDS-compliant derivatives with:
-- `dataset_description.json` - Metadata about the derivatives
-- `sub-*/sub-*_T1w-volumes.tsv` - Volume counts per participant
-- `sub-*/sub-*_T1w-volumes.json` - Metadata sidecar
-- `participants.tsv` - Summary across all participants
+38 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+38 job(s) successfully finished;
+All jobs are completed!
+
+All log files are located in folder: /orcd/scratch/bcs/001/yibei/babs-demo-ohbm2025/counting_project/analysis/logs
+```
+
+## 8. After jobs have finished
+
+### 8.1. Use babs merge to merge all results and provenance
+
+We now run `babs merge` in `counting_project`:
+
+```bash
+babs merge
+```
+
+If it was successful, you'll see this message:
+```
+`babs merge` was successful!
+```
+
+Now you're ready to check the results.
+
+### 8.2. Check results
+
+Clone the output RIA as another folder (e.g., called `counting_project_outputs`) to a location external to the BABS project:
+
+```bash
+cd ..   # Now, you should be in folder `babs-demo-ohbm2025`, where `counting_project` locates
+
+datalad clone \
+    ria+file://${PWD}/counting_project/output_ria#~data \
+    counting_project_outputs
+```
+
+You'll see:
+```
+[INFO   ] Configure additional publication dependency on "output-storage"                                                         
+configure-sibling(ok): . (sibling)
+install(ok): /orcd/scratch/bcs/001/yibei/babs-demo-ohbm2025/counting_project_outputs (dataset)
+action summary:
+  configure-sibling (ok: 1)
+  install (ok: 1)
+```
+
+Let's go into this new folder and see what's inside:
+
+```bash
+cd counting_project_outputs
+ls
+```
+
+You'll see:
+```
+CHANGELOG.md                             sub-0051466_t1-volume-counter-0-1-0.zip  sub-0051481_t1-volume-counter-0-1-0.zip
+code                                     sub-0051467_t1-volume-counter-0-1-0.zip  sub-0051482_t1-volume-counter-0-1-0.zip
+containers                               sub-0051468_t1-volume-counter-0-1-0.zip  sub-0051483_t1-volume-counter-0-1-0.zip
+inputs                                   sub-0051469_t1-volume-counter-0-1-0.zip  sub-0051484_t1-volume-counter-0-1-0.zip
+README.md                                sub-0051470_t1-volume-counter-0-1-0.zip  sub-0051485_t1-volume-counter-0-1-0.zip
+sub-0051456_t1-volume-counter-0-1-0.zip  sub-0051471_t1-volume-counter-0-1-0.zip  sub-0051486_t1-volume-counter-0-1-0.zip
+sub-0051457_t1-volume-counter-0-1-0.zip  sub-0051472_t1-volume-counter-0-1-0.zip  sub-0051487_t1-volume-counter-0-1-0.zip
+sub-0051458_t1-volume-counter-0-1-0.zip  sub-0051473_t1-volume-counter-0-1-0.zip  sub-0051488_t1-volume-counter-0-1-0.zip
+sub-0051459_t1-volume-counter-0-1-0.zip  sub-0051474_t1-volume-counter-0-1-0.zip  sub-0051489_t1-volume-counter-0-1-0.zip
+sub-0051460_t1-volume-counter-0-1-0.zip  sub-0051475_t1-volume-counter-0-1-0.zip  sub-0051490_t1-volume-counter-0-1-0.zip
+sub-0051461_t1-volume-counter-0-1-0.zip  sub-0051476_t1-volume-counter-0-1-0.zip  sub-0051491_t1-volume-counter-0-1-0.zip
+sub-0051462_t1-volume-counter-0-1-0.zip  sub-0051477_t1-volume-counter-0-1-0.zip  sub-0051492_t1-volume-counter-0-1-0.zip
+sub-0051463_t1-volume-counter-0-1-0.zip  sub-0051478_t1-volume-counter-0-1-0.zip  sub-0051493_t1-volume-counter-0-1-0.zip
+sub-0051464_t1-volume-counter-0-1-0.zip  sub-0051479_t1-volume-counter-0-1-0.zip
+sub-0051465_t1-volume-counter-0-1-0.zip  sub-0051480_t1-volume-counter-0-1-0.zip
+```
+
+Let's use `datalad get` and then `unzip -l` to fetch the results:
+
+```bash
+datalad get sub-0051456_t1-volume-counter-0-1-0.zip 
+unzip -l sub-0051456_t1-volume-counter-0-1-0.zip 
+```
+
+You will see the following message:
+```
+get(ok): sub-0051456_t1-volume-counter-0-1-0.zip (file) [from output-storage...]                                                  
+
+Archive:  sub-0051456_t1-volume-counter-0-1-0.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  06-20-2025 12:58   t1-volume-counter/
+      300  06-20-2025 12:58   t1-volume-counter/dataset_description.json
+       57  06-20-2025 12:58   t1-volume-counter/participants.tsv
+        0  06-20-2025 12:58   t1-volume-counter/sub-0051456/
+      239  06-20-2025 12:58   t1-volume-counter/sub-0051456/sub-0051456_T1w-volumes.json
+       44  06-20-2025 12:58   t1-volume-counter/sub-0051456/sub-0051456_T1w-volumes.tsv
+---------                     -------
+      640                     6 files
+```
+
+Voilà! Your first BABS project has succeeded! 

@@ -26,7 +26,7 @@ cluster_resources:
     customized_text: |
         #SBATCH --partition=mit_preemptable
         #SBATCH --cpus-per-task=1
-        #SBATCH --mem=8G
+        #SBATCH --mem=4G
         #SBATCH --time=00:05:00
         #SBATCH --job-name=t1_volume_counter
 
