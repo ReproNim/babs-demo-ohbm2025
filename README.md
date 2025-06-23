@@ -11,7 +11,7 @@ This repository demonstrates how to use BIDS App Bootstrap (BABS) with a simple 
 - BABS environment (including DataLad, git-annex)
 - HPC (SLURM or SGE, we will use SLURM in this demo)
 - A BIDS App
-- A BIDS dataset (we will use ABIDE-I in this demo)
+- A BIDS dataset (we will use [ABIDE-I](https://fcon_1000.projects.nitrc.org/indi/abide/abide_I.html) in this demo)
 
 ## 1. Get on HPC and Git Clone this repo (your fork)
 
